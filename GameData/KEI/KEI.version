@@ -1,7 +1,7 @@
 {
     "NAME"     : "Kerbin Environmental Institute",
-    "URL"      : "https://github.com/Real-Gecko/KSP-KEI",
-    "DOWNLOAD" : "",
+    "URL"      : "https://raw.githubusercontent.com/Real-Gecko/KSP-KEI/master/GameData/KEI/KEI.version",
+    "DOWNLOAD" : "https://github.com/Real-Gecko/KSP-KEI/releases",
     "GITHUB" :
     {
         "USERNAME" : "Real-Gecko",
