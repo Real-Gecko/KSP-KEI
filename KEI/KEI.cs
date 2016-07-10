@@ -34,10 +34,10 @@ namespace KEI
         public void OnGUI()
         {
             if (!firstRun) return;
-            if (ProgressTracking.Instance == null) return;
-            firstRun = false;
-            if (!ProgressTracking.Instance.firstLaunch.IsComplete)
-                ResearchStart();
+            if (ResearchAndDevelopment.Instance != null && PartLoader.Instance != null) {
+                RerunResearch();
+                firstRun = false;
+            }
         }
 
         void OnDestroy()
@@ -49,15 +49,23 @@ namespace KEI
             }
         }
 
-        private void ResearchStart()
+        private void RerunResearch()
         {
-            ProtoTechNode tn = ResearchAndDevelopment.Instance.GetTechState("start");
             List<ScienceExperiment> experiments = new List<ScienceExperiment>();
-            List<AvailablePart> parts = tn.partsPurchased;
+            List<AvailablePart> parts = PartLoader.Instance.parts;
 
-            foreach (AvailablePart part in parts)
+            // EVA Reports available from the beginning
+            experiments.Add(ResearchAndDevelopment.GetExperiment("evaReport"));
+
+            // To take surface samples from other worlds you need to upgrade Astronaut Complex and R&D
+            // But to take surface samples from home you need to only upgrade R&D
+            if (ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.ResearchAndDevelopment) >= 0.5)
+                experiments.Add(ResearchAndDevelopment.GetExperiment("surfaceSample"));
+
+            foreach (var part in parts.Where(x => ResearchAndDevelopment.PartTechAvailable(x)))
             {
-                if (part.partPrefab.Modules != null) // part has some modules
+                // Part has some modules
+                if (part.partPrefab.Modules != null)
                 {
                     // Check through science modules
                     foreach (ModuleScienceExperiment ex in part.partPrefab.Modules.OfType<ModuleScienceExperiment>())
@@ -109,13 +117,13 @@ namespace KEI
                 List<ScienceExperiment> experiments = new List<ScienceExperiment>();
                 List<AvailablePart> parts = hta.host.partsAssigned;
 
-                // EVA Reports available from the beginning
-                experiments.Add(ResearchAndDevelopment.GetExperiment("evaReport"));
-
                 // To take surface samples from other worlds you need to upgrade Astronaut Complex and R&D
                 // But to take surface samples from home you need to only upgrade R&D
                 if (ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.ResearchAndDevelopment) >= 0.5)
                     experiments.Add(ResearchAndDevelopment.GetExperiment("surfaceSample"));
+
+                // EVA Reports available from the beginning
+                experiments.Add(ResearchAndDevelopment.GetExperiment("evaReport"));
 
                 foreach (AvailablePart part in parts)
                 {
@@ -168,7 +176,9 @@ namespace KEI
                     );
                     if (subject.science < subject.scienceCap)
                     {
-                        subject.subjectValue = 1.0f; // We want to get full science reward
+                        // We want to get full science reward
+                        subject.subjectValue = 1.0f;
+
                         gain += ResearchAndDevelopment.Instance.SubmitScienceData(
                             subject.scienceCap * subject.dataScale * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier,
                             subject

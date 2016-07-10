@@ -1,7 +1,7 @@
 {
     "NAME"     : "Kerbin Environmental Institute",
     "URL"      : "https://raw.githubusercontent.com/Real-Gecko/KSP-KEI/master/GameData/KEI/KEI.version",
-    "DOWNLOAD" : "https://github.com/Real-Gecko/KSP-KEI/releases",
+    "DOWNLOAD" : "http://spacedock.info/mod/834/KEI",
     "GITHUB" :
     {
         "USERNAME" : "Real-Gecko",
@@ -11,7 +11,7 @@
     {
         "MAJOR" : 1,
         "MINOR" : 0,
-        "PATCH" : 0,
+        "PATCH" : 1,
         "BUILD" : 0
     },
     "KSP_VERSION" :
