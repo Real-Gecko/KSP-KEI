@@ -186,9 +186,9 @@ namespace KEI
                     }
                 }
                 totalGain += gain;
-                if (gain > 0.0f && facility == null) Report(experiment, gain);
+                if (gain >= 0.01f && facility == null) Report(experiment, gain);
             }
-            if (facility != null && totalGain > 0.0f) Report(facility, level, totalGain);
+            if (facility != null && totalGain >= 0.01f) Report(facility, level, totalGain);
         }
 
         private void Report(ScienceExperiment experiment, float gain)
