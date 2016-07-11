@@ -4,53 +4,105 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.UI.Screens;
+using KSP.IO;
 
 namespace KEI
 {
 	[KSPAddon(KSPAddon.Startup.SpaceCentre, false)]
 	class KEI : MonoBehaviour
 	{
-		private bool active = false;
+		public static KEI Instance;
+		private bool isActive = false;
 		private bool firstRun = true;
+		private bool isEnabled = false;
+		private PluginConfiguration config;
 
+		//GUI related members
+		private ApplicationLauncherButton appLauncherButton;
+		private bool showSettings = false;
+		private Rect rectSettings = new Rect();
+		private Rect RectSettings
+		{
+			get
+			{
+				rectSettings.x = (Screen.width - rectSettings.width) / 2;
+				rectSettings.y = (Screen.height - rectSettings.height) / 2;
+				return rectSettings;
+			}
+			set
+			{
+				rectSettings = value;
+			}
+		}
+
+		//Public procedures
 		public void Awake()
 		{
+			if (Instance != null) {
+				Destroy (this);
+				return;
+			}
+			Instance = this;
 			if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER || HighLogic.CurrentGame.Mode == Game.Modes.SCIENCE_SANDBOX)
 			{
-				active = true;
+				isActive = true;
+				config = PluginConfiguration.CreateForType<KEI> ();
+				config.load ();
+				isEnabled = config.GetValue<bool>(HighLogic.CurrentGame.Title, false);
 			}
 		}
 
 		public void Start()
 		{
-			if (active)
+			if (isActive)
 			{
 				GameEvents.OnKSCFacilityUpgraded.Add(OnKSCFacilityUpgraded);
 				GameEvents.OnTechnologyResearched.Add(OnTechnologyResearched);
-			}
-		}
-
-		// Completely not elegant way of detecting career start
-		public void OnGUI()
-		{
-			if (!firstRun) return;
-			if (ResearchAndDevelopment.Instance != null && PartLoader.Instance != null) {
-				RerunResearch();
-				firstRun = false;
+				GameEvents.onGUIApplicationLauncherReady.Add(OnAppLauncherReady);
 			}
 		}
 
 		void OnDestroy()
 		{
-			if (active)
+			if (isActive)
 			{
 				GameEvents.OnKSCFacilityUpgraded.Remove(OnKSCFacilityUpgraded);
 				GameEvents.OnTechnologyResearched.Remove(OnTechnologyResearched);
+				GameEvents.onGUIApplicationLauncherReady.Remove(OnAppLauncherReady);
+				if (appLauncherButton != null) {
+					ApplicationLauncher.Instance.RemoveModApplication (appLauncherButton);
+				}
 			}
 		}
 
-		private void RerunResearch()
+		public void OnGUI()
 		{
+			if (!isActive) return;
+
+			if (showSettings) {
+				GUI.skin = UnityEngine.GUI.skin;
+				RectSettings = GUILayout.Window(
+					1248597845,
+					RectSettings,
+					SettingsDialog,
+					"Kerbin Environmental Institute",
+					GUILayout.ExpandWidth(true),
+					GUILayout.ExpandHeight(true)
+				);
+			}
+
+			if (!isEnabled) return;
+			if (!firstRun) return;
+			if (ResearchAndDevelopment.Instance != null && PartLoader.Instance != null) {
+				RunExperiments();
+				firstRun = false;
+			}
+		}
+
+		//Private procedures
+		private void RunExperiments() {
+			if (!isEnabled) return;
+
 			List<ScienceExperiment> experiments = new List<ScienceExperiment>();
 			List<AvailablePart> parts = PartLoader.Instance.parts;
 
@@ -77,8 +129,9 @@ namespace KEI
 			GainScience(experiments);
 		}
 
-		private void OnKSCFacilityUpgraded(Upgradeables.UpgradeableFacility facility, int level)
-		{
+		private void OnKSCFacilityUpgraded(Upgradeables.UpgradeableFacility facility, int level) {
+			if (!isEnabled) return;
+
 			List<AvailablePart> parts = PartLoader.Instance.parts;
 			List<ScienceExperiment> experiments = new List<ScienceExperiment>();
 
@@ -110,8 +163,9 @@ namespace KEI
 			GainScience(experiments, facility, level);
 		}
 
-		private void OnTechnologyResearched(GameEvents.HostTargetAction<RDTech, RDTech.OperationResult> hta)
-		{
+		private void OnTechnologyResearched(GameEvents.HostTargetAction<RDTech, RDTech.OperationResult> hta) {
+			if (!isEnabled) return;
+
 			if (hta.target == RDTech.OperationResult.Successful) // research was successfull
 			{
 				List<ScienceExperiment> experiments = new List<ScienceExperiment>();
@@ -240,6 +294,49 @@ namespace KEI
 				MessageSystemButton.ButtonIcons.MESSAGE
 			);
 			MessageSystem.Instance.AddMessage(message);
+		}
+
+		//GUI related functions
+		private void OnAppLauncherReady() {
+			if (appLauncherButton == null)
+			{
+				appLauncherButton = ApplicationLauncher.Instance.AddModApplication(
+					toggleSettingsDialog,
+					toggleSettingsDialog,
+					null,
+					null,
+					null,
+					null,
+					ApplicationLauncher.AppScenes.SPACECENTER,
+					GameDatabase.Instance.GetTexture("KEI/Textures/kei-icon", false)
+				);
+			}
+		}
+
+		private void toggleSettingsDialog()
+		{
+			showSettings = !showSettings;
+		}
+
+		private void SaveSettings () {
+			appLauncherButton.SetFalse();
+			isEnabled = config.GetValue<bool> (HighLogic.CurrentGame.Title);
+			firstRun = true;
+			config.save ();
+		}
+
+		private void SettingsDialog(int id)
+		{
+			GUILayout.BeginVertical();
+			config[HighLogic.CurrentGame.Title] = GUILayout.Toggle(
+				config.GetValue<bool>(HighLogic.CurrentGame.Title),
+				"Make those lazybones work",
+				GUILayout.Width(210)
+			);
+			if (GUILayout.Button ("Save & Close", GUILayout.Height (30)))
+				SaveSettings ();
+			GUILayout.EndVertical();
+			GUI.DragWindow ();
 		}
 	}
 }
