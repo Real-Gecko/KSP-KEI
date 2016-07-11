@@ -1,65 +1,58 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{5D9BF5AF-A500-4ADA-86EE-FFE52D72A16D}</ProjectGuid>
+    <ProjectGuid>{97C2DFE5-9E64-4B6D-A352-432CDD2CE316}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>KEI</RootNamespace>
     <AssemblyName>KEI</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
+    <DebugType>full</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <OutputPath>bin\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="AfterBuild" command="${ProjectDir}\copy.bat" />
+      </CustomCommands>
+    </CustomCommands>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="System" />
     <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\KSP\KSP_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>E:\KSP\KSP_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="KSPUtil">
-      <HintPath>..\..\KSP\KSP_Data\Managed\KSPUtil.dll</HintPath>
+      <HintPath>E:\KSP\KSP_Data\Managed\KSPUtil.dll</HintPath>
     </Reference>
-    <Reference Include="System" />
-    <Reference Include="Microsoft.CSharp" />
     <Reference Include="UnityEngine">
-      <HintPath>..\..\KSP\KSP_Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>E:\KSP\KSP_Data\Managed\UnityEngine.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>..\..\KSP\KSP_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <HintPath>E:\KSP\KSP_Data\Managed\UnityEngine.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="KEI.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="KEI.cs" />
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>copy $(TargetFileName) $(SolutionDir)\GameData\KEI
-copy $(TargetFileName) E:\KSP\GameData\KEI</PostBuildEvent>
-  </PropertyGroup>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <None Include="copy.bat" />
+  </ItemGroup>
 </Project>
