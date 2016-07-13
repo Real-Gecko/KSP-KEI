@@ -11,29 +11,27 @@ namespace KEI
 	[KSPAddon(KSPAddon.Startup.SpaceCentre, false)]
 	class KEI : MonoBehaviour
 	{
+		private class AvailableExperiment
+		{
+			public ScienceExperiment experiment;
+			public float possibleGain;
+			public bool done;
+		}
+
 		public static KEI Instance;
-		private bool isActive = false;
-		private bool firstRun = true;
-		private bool isEnabled = false;
-		private PluginConfiguration config;
+		private bool isActive;
+
+		private List<AvailableExperiment> availableExperiments;
+		private List<ScienceExperiment> unlockedExperiments;
+		private List<string> kscBiomes;
+		private CelestialBody Kerbin;
 
 		//GUI related members
 		private ApplicationLauncherButton appLauncherButton;
-		private bool showSettings = false;
-		private Rect rectSettings = new Rect();
-		private Rect RectSettings
-		{
-			get
-			{
-				rectSettings.x = (Screen.width - rectSettings.width) / 2;
-				rectSettings.y = (Screen.height - rectSettings.height) / 2;
-				return rectSettings;
-			}
-			set
-			{
-				rectSettings = value;
-			}
-		}
+		private int mainWindowId;
+		private Rect mainWindowRect;
+		private bool mainWindowVisible;
+		private Vector2 mainWindowScrollPosition;
 
 		//Public procedures
 		public void Awake()
@@ -43,12 +41,16 @@ namespace KEI
 				return;
 			}
 			Instance = this;
+			isActive = false;
 			if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER || HighLogic.CurrentGame.Mode == Game.Modes.SCIENCE_SANDBOX)
 			{
 				isActive = true;
-				config = PluginConfiguration.CreateForType<KEI> ();
-				config.load ();
-				isEnabled = config.GetValue<bool>(HighLogic.CurrentGame.Title, false);
+				availableExperiments = new List<AvailableExperiment>();
+				unlockedExperiments = new List<ScienceExperiment>();
+				kscBiomes = new List<string>();
+				mainWindowRect = new Rect();
+				mainWindowScrollPosition = new Vector2();
+				mainWindowVisible = false;
 			}
 		}
 
@@ -56,9 +58,16 @@ namespace KEI
 		{
 			if (isActive)
 			{
+				mainWindowId = GUIUtility.GetControlID(FocusType.Passive);
+				mainWindowRect.width = 400;
+				mainWindowRect.x = (Screen.width - 400) / 2;
+				mainWindowRect.y = Screen.height / 4;
+				mainWindowScrollPosition.Set(0, 0);
+
 				GameEvents.OnKSCFacilityUpgraded.Add(OnKSCFacilityUpgraded);
 				GameEvents.OnTechnologyResearched.Add(OnTechnologyResearched);
 				GameEvents.onGUIApplicationLauncherReady.Add(OnAppLauncherReady);
+				GameEvents.onGUIRnDComplexSpawn.Add(onGUIRnDComplexSpawn);
 			}
 		}
 
@@ -69,138 +78,52 @@ namespace KEI
 				GameEvents.OnKSCFacilityUpgraded.Remove(OnKSCFacilityUpgraded);
 				GameEvents.OnTechnologyResearched.Remove(OnTechnologyResearched);
 				GameEvents.onGUIApplicationLauncherReady.Remove(OnAppLauncherReady);
-				if (appLauncherButton != null) {
+				GameEvents.onGUIRnDComplexSpawn.Remove(onGUIRnDComplexSpawn);
+				if (appLauncherButton != null)
 					ApplicationLauncher.Instance.RemoveModApplication (appLauncherButton);
-				}
 			}
+		}
+
+		private void OnKSCFacilityUpgraded(Upgradeables.UpgradeableFacility facility, int level)
+		{
+			appLauncherButton.SetFalse();
+		}
+
+		private void OnTechnologyResearched(GameEvents.HostTargetAction<RDTech, RDTech.OperationResult> hta)
+		{
+			// Research was successfull
+			if (hta.target == RDTech.OperationResult.Successful)
+			{
+			}
+		}
+
+		private void onGUIRnDComplexSpawn()
+		{
+			appLauncherButton.SetFalse();
 		}
 
 		public void OnGUI()
 		{
 			if (!isActive) return;
-
-			if (showSettings) {
+			if (mainWindowVisible) {
 				GUI.skin = UnityEngine.GUI.skin;
-				RectSettings = GUILayout.Window(
-					1248597845,
-					RectSettings,
-					SettingsDialog,
+				mainWindowRect = GUILayout.Window(
+					mainWindowId,
+					mainWindowRect,
+					RenderMainWindow,
 					"Kerbin Environmental Institute",
 					GUILayout.ExpandWidth(true),
 					GUILayout.ExpandHeight(true)
 				);
 			}
-
-			if (!isEnabled) return;
-			if (!firstRun) return;
-			if (ResearchAndDevelopment.Instance != null && PartLoader.Instance != null) {
-				RunExperiments();
-				firstRun = false;
-			}
 		}
 
-		//Private procedures
-		private void RunExperiments() {
-			if (!isEnabled) return;
-
-			List<ScienceExperiment> experiments = new List<ScienceExperiment>();
-			List<AvailablePart> parts = PartLoader.Instance.parts;
-
-			// EVA Reports available from the beginning
-			experiments.Add(ResearchAndDevelopment.GetExperiment("evaReport"));
-
-			// To take surface samples from other worlds you need to upgrade Astronaut Complex and R&D
-			// But to take surface samples from home you need to only upgrade R&D
-			if (ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.ResearchAndDevelopment) >= 0.5)
-				experiments.Add(ResearchAndDevelopment.GetExperiment("surfaceSample"));
-
-			foreach (var part in parts.Where(x => ResearchAndDevelopment.PartTechAvailable(x)))
-			{
-				// Part has some modules
-				if (part.partPrefab.Modules != null)
-				{
-					// Check through science modules
-					foreach (ModuleScienceExperiment ex in part.partPrefab.Modules.OfType<ModuleScienceExperiment>())
-					{
-						experiments.AddUnique<ScienceExperiment>(ResearchAndDevelopment.GetExperiment(ex.experimentID));
-					}
-				}
-			}
-			GainScience(experiments);
-		}
-
-		private void OnKSCFacilityUpgraded(Upgradeables.UpgradeableFacility facility, int level) {
-			if (!isEnabled) return;
-
-			List<AvailablePart> parts = PartLoader.Instance.parts;
-			List<ScienceExperiment> experiments = new List<ScienceExperiment>();
-
-			// To take surface samples from other worlds you need to upgrade Astronaut Complex and R&D
-			// But to take surface samples from home you need to only upgrade R&D
-			if (ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.ResearchAndDevelopment) >= 0.5)
-				experiments.Add(ResearchAndDevelopment.GetExperiment("surfaceSample"));
-
-			// R&D upgraded we have to grab surface samples first
-			if (facility.id == "SpaceCenter/ResearchAndDevelopment" && level == 1) {
-				GainScience(experiments);
-			}
-
-			// EVA Reports available from the beginning
-			experiments.Add(ResearchAndDevelopment.GetExperiment("evaReport"));
-
-			// Find list of all unlocked experiments
-			foreach (var part in parts.Where(x => ResearchAndDevelopment.PartTechAvailable(x)))
-			{
-				if (part.partPrefab.Modules != null) // part has some modules
-				{
-					// Check through science modules
-					foreach (ModuleScienceExperiment module in part.partPrefab.Modules.OfType<ModuleScienceExperiment>())
-					{
-						experiments.AddUnique<ScienceExperiment>(ResearchAndDevelopment.GetExperiment(module.experimentID));
-					}
-				}
-			}
-			GainScience(experiments, facility, level);
-		}
-
-		private void OnTechnologyResearched(GameEvents.HostTargetAction<RDTech, RDTech.OperationResult> hta) {
-			if (!isEnabled) return;
-
-			if (hta.target == RDTech.OperationResult.Successful) // research was successfull
-			{
-				List<ScienceExperiment> experiments = new List<ScienceExperiment>();
-				List<AvailablePart> parts = hta.host.partsAssigned;
-
-				// To take surface samples from other worlds you need to upgrade Astronaut Complex and R&D
-				// But to take surface samples from home you need to only upgrade R&D
-				if (ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.ResearchAndDevelopment) >= 0.5)
-					experiments.Add(ResearchAndDevelopment.GetExperiment("surfaceSample"));
-
-				// EVA Reports available from the beginning
-				experiments.Add(ResearchAndDevelopment.GetExperiment("evaReport"));
-
-				foreach (AvailablePart part in parts)
-				{
-					if (part.partPrefab.Modules != null) // part has some modules
-					{
-						// Check through science modules
-						foreach (ModuleScienceExperiment ex in part.partPrefab.Modules.OfType<ModuleScienceExperiment>())
-						{
-							experiments.AddUnique<ScienceExperiment>(ResearchAndDevelopment.GetExperiment(ex.experimentID));
-						}
-					}
-				}
-				GainScience(experiments);
-			}
-		}
-
-		private void GainScience(List<ScienceExperiment> experiments, Upgradeables.UpgradeableFacility facility = null, int level = 0)
-		{
-			List<string> kscBiomes;
-			CelestialBody Kerbin;
-			float totalGain = 0.0f;
+		private void GetKscBiomes() {
+			// Find da Kerbin
+			Kerbin = FlightGlobals.Bodies.Find(x => x.bodyName == "Kerbin");
 
 			// Find KSC biomes - stolen from [x] Science source code :D
+			kscBiomes.Clear();
 			kscBiomes = UnityEngine.Object.FindObjectsOfType<Collider>()
 				.Where(x => x.gameObject.layer == 15)
 				.Select(x => x.gameObject.tag)
@@ -212,12 +135,42 @@ namespace KEI
 				.Select(x => x.Replace(" ", ""))
 				.Distinct()
 				.ToList();
+		}
 
-			// Find da Kerbin
-			Kerbin = FlightGlobals.Bodies.Find(x => x.bodyName == "Kerbin");
+		private void GetExperiments() {
+			unlockedExperiments.Clear();
+			availableExperiments.Clear();
 
-			// Let's complete all da experiments in all KSC biomes
-			foreach (var experiment in experiments)
+			// List available experiments
+			List<AvailablePart> parts = PartLoader.Instance.parts;
+
+			// EVA Reports available from the beginning
+			unlockedExperiments.Add(ResearchAndDevelopment.GetExperiment("evaReport"));
+
+			// To take surface samples from other worlds you need to upgrade Astronaut Complex and R&D
+			// But to take surface samples from home you need to only upgrade R&D
+			if (ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.ResearchAndDevelopment) >= 0.5)
+				unlockedExperiments.Add(ResearchAndDevelopment.GetExperiment("surfaceSample"));
+
+			foreach (var part in parts.Where(x => ResearchAndDevelopment.PartTechAvailable(x) && x.manufacturer != "Station Science Directorate"))
+			{
+				// Part has some modules
+				if (part.partPrefab.Modules != null)
+				{
+					// Check science modules
+					foreach (ModuleScienceExperiment ex in part.partPrefab.Modules.OfType<ModuleScienceExperiment>())
+						unlockedExperiments.AddUnique<ScienceExperiment>(ResearchAndDevelopment.GetExperiment(ex.experimentID));
+				}
+			}
+			// Remove Surface Experiments Pack experiments not meant to run in atmosphere
+			unlockedExperiments.Remove(ResearchAndDevelopment.GetExperiment("SEP_SolarwindSpectrum"));
+			unlockedExperiments.Remove(ResearchAndDevelopment.GetExperiment("SEP_CCIDscan"));
+		}
+
+		private void GainScience(List<ScienceExperiment> experiments, bool analyze)
+		{
+			// Let's get science objects in all KSC biomes
+			foreach (var experiment in experiments.Where(x => x.IsAvailableWhile(ExperimentSituations.SrfLanded, Kerbin)))
 			{
 				float gain = 0.0f;
 				foreach (var biome in kscBiomes)
@@ -230,19 +183,36 @@ namespace KEI
 					);
 					if (subject.science < subject.scienceCap)
 					{
-						// We want to get full science reward
-						subject.subjectValue = 1.0f;
+						if (analyze)
+						{
+							gain += subject.scienceCap - subject.science;
+						}
+						else {
+							// We want to get full science reward
+							subject.subjectValue = 1.0f;
 
-						gain += ResearchAndDevelopment.Instance.SubmitScienceData(
-							subject.scienceCap * subject.dataScale * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier,
-							subject
-						);
+							gain += ResearchAndDevelopment.Instance.SubmitScienceData(
+								subject.scienceCap * subject.dataScale * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier,
+								subject
+							);
+						}
 					}
 				}
-				totalGain += gain;
-				if (gain >= 0.01f && facility == null) Report(experiment, gain);
+				if (gain >= 0.01f)
+				{
+					if (analyze)
+						availableExperiments.Add(
+							new AvailableExperiment
+							{
+								experiment = experiment,
+								possibleGain = gain,
+								done = false
+							}
+						);
+					else
+						Report(experiment, gain);
+				}
 			}
-			if (facility != null && totalGain >= 0.01f) Report(facility, level, totalGain);
 		}
 
 		private void Report(ScienceExperiment experiment, float gain)
@@ -277,32 +247,13 @@ namespace KEI
 			MessageSystem.Instance.AddMessage(message);
 		}
 
-		private void Report(Upgradeables.UpgradeableFacility facility, int level, float gain)
-		{
-			string[] template = KSP.IO.File.ReadAllLines<KEI>("facilityUpgrade.msg");
-			StringBuilder msg = new StringBuilder();
-			foreach (var line in template)
-			{
-				msg.AppendLine(line);
-			}
-			msg.AppendLine("");
-			msg.AppendLine(string.Format("<color=#B4D455>Total science gain: {0}</color>", gain.ToString("0.00")));
-			MessageSystem.Message message = new MessageSystem.Message(
-				"New Email",
-				msg.ToString(),
-				MessageSystemButton.MessageButtonColor.GREEN,
-				MessageSystemButton.ButtonIcons.MESSAGE
-			);
-			MessageSystem.Instance.AddMessage(message);
-		}
-
 		//GUI related functions
 		private void OnAppLauncherReady() {
 			if (appLauncherButton == null)
 			{
 				appLauncherButton = ApplicationLauncher.Instance.AddModApplication(
-					toggleSettingsDialog,
-					toggleSettingsDialog,
+					ShowMainWindow,
+					HideMainWindow,
 					null,
 					null,
 					null,
@@ -313,30 +264,52 @@ namespace KEI
 			}
 		}
 
-		private void toggleSettingsDialog()
-		{
-			showSettings = !showSettings;
+		private void ShowMainWindow() {
+			GetKscBiomes();
+			GetExperiments();
+			GainScience(unlockedExperiments, true);
+			mainWindowVisible = true;
 		}
 
-		private void SaveSettings () {
-			appLauncherButton.SetFalse();
-			isEnabled = config.GetValue<bool> (HighLogic.CurrentGame.Title);
-			firstRun = true;
-			config.save ();
+		private void HideMainWindow() {
+			mainWindowVisible = false;
 		}
 
-		private void SettingsDialog(int id)
-		{
+		private void RenderMainWindow(int windowId) {
 			GUILayout.BeginVertical();
-			config[HighLogic.CurrentGame.Title] = GUILayout.Toggle(
-				config.GetValue<bool>(HighLogic.CurrentGame.Title),
-				"Make those lazybones work",
-				GUILayout.Width(210)
-			);
-			if (GUILayout.Button ("Save & Close", GUILayout.Height (30)))
-				SaveSettings ();
+			if (availableExperiments.Count > 0)
+			{
+				mainWindowScrollPosition = GUILayout.BeginScrollView(mainWindowScrollPosition, GUILayout.Height(Screen.height/2));
+				//				foreach (var available in availableExperiments)
+				for (var i = 0; i < availableExperiments.Count; i++)
+				{
+					if (availableExperiments[i].done) GUI.enabled = false;
+					if (GUILayout.Button(availableExperiments[i].experiment.experimentTitle + " " + availableExperiments[i].possibleGain.ToString("0.00"), GUILayout.Height(25)))
+					{
+						var l = new List<ScienceExperiment>();
+						l.Add(availableExperiments[i].experiment);
+						GainScience(l, false);
+						availableExperiments[i].done = true;
+					}
+					if (!GUI.enabled) GUI.enabled = true;
+				}
+				GUILayout.EndScrollView();
+				GUILayout.Space(10);
+				if (availableExperiments.Where(x => !x.done).Count() == 0) GUI.enabled = false;
+				if (GUILayout.Button("Make me happy! " + availableExperiments.Where(x => !x.done).Select(x => x.possibleGain).Sum().ToString("0.00"), GUILayout.Height(25)))
+				{
+					availableExperiments.ForEach(x => x.done = true);
+					GainScience(availableExperiments.Select(x => x.experiment).ToList(), false);
+				}
+				if (!GUI.enabled) GUI.enabled = true;
+			}
+			else {
+				GUILayout.Label("Nothing to do here, go research something.");
+			}
+			if (GUILayout.Button("Close", GUILayout.Height(25)))
+				appLauncherButton.SetFalse();
 			GUILayout.EndVertical();
-			GUI.DragWindow ();
+			GUI.DragWindow();
 		}
 	}
 }
