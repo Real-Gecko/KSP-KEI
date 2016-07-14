@@ -4,6 +4,9 @@
 Gather science from KSC in one click.
 
 # Changelog
+## 1.1.1
+- Fixed science return value for games with science gain different than 100%
+
 ## 1.1.0
 - Experiments are not performed automatically anymore.
 - GUI to gather KSC sciecne.

@@ -185,14 +185,14 @@ namespace KEI
 					{
 						if (analyze)
 						{
-							gain += subject.scienceCap - subject.science;
+							gain += (subject.scienceCap - subject.science) * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier;
 						}
 						else {
 							// We want to get full science reward
 							subject.subjectValue = 1.0f;
 
 							gain += ResearchAndDevelopment.Instance.SubmitScienceData(
-								subject.scienceCap * subject.dataScale * HighLogic.CurrentGame.Parameters.Career.ScienceGainMultiplier,
+								subject.scienceCap * subject.dataScale,
 								subject
 							);
 						}
