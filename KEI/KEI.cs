@@ -159,7 +159,10 @@ namespace KEI
 				{
 					// Check science modules
 					foreach (ModuleScienceExperiment ex in part.partPrefab.Modules.OfType<ModuleScienceExperiment>())
-						unlockedExperiments.AddUnique<ScienceExperiment>(ResearchAndDevelopment.GetExperiment(ex.experimentID));
+						if (!ex.experimentID.Equals(""))
+						{
+							unlockedExperiments.AddUnique<ScienceExperiment>(ResearchAndDevelopment.GetExperiment(ex.experimentID));
+						}
 				}
 			}
 			// Remove Surface Experiments Pack experiments not meant to run in atmosphere
