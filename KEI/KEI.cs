@@ -24,7 +24,7 @@ namespace KEI
 		private List<AvailableExperiment> availableExperiments;
 		private List<ScienceExperiment> unlockedExperiments;
 		private List<string> kscBiomes;
-		private CelestialBody Kerbin;
+		private CelestialBody HomeBody;
 
 		//GUI related members
 		private ApplicationLauncherButton appLauncherButton;
@@ -119,8 +119,8 @@ namespace KEI
 		}
 
 		private void GetKscBiomes() {
-			// Find da Kerbin
-			Kerbin = FlightGlobals.Bodies.Find(x => x.bodyName == "Kerbin");
+			// Find home body
+			HomeBody = FlightGlobals.GetHomeBody();
 
 			// Find KSC biomes - stolen from [x] Science source code :D
 			kscBiomes.Clear();
@@ -173,7 +173,7 @@ namespace KEI
 		private void GainScience(List<ScienceExperiment> experiments, bool analyze)
 		{
 			// Let's get science objects in all KSC biomes
-			foreach (var experiment in experiments.Where(x => x.IsAvailableWhile(ExperimentSituations.SrfLanded, Kerbin)))
+			foreach (var experiment in experiments.Where(x => x.IsAvailableWhile(ExperimentSituations.SrfLanded, HomeBody)))
 			{
 				float gain = 0.0f;
 				foreach (var biome in kscBiomes)
@@ -181,7 +181,7 @@ namespace KEI
 					ScienceSubject subject = ResearchAndDevelopment.GetExperimentSubject(
 						experiment,
 						ExperimentSituations.SrfLanded,
-						Kerbin,
+						HomeBody,
 						biome
 					);
 					if (subject.science < subject.scienceCap)

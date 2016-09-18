@@ -4,6 +4,10 @@
 Gather science from KSC in one click.
 
 # Changelog
+## 1.1.2
+- Typo fixes by [Kerbas-ad-astra](https://github.com/Kerbas-ad-astra)
+- Home planet taken from FlightGlobals, tested with [RSS](http://forum.kerbalspaceprogram.com/index.php?/topic/50471-113-real-solar-system-v1140-july-3/) and [Dres is a Harsh Mistress ](http://forum.kerbalspaceprogram.com/index.php?/topic/141142-dres-is-a-harsh-mistress/)
+
 ## 1.1.1
 - Fixed science return value for games with science gain different than 100%
 
