@@ -58,16 +58,17 @@ namespace KEI
 		{
 			if (isActive)
 			{
+				HomeBody = FlightGlobals.GetHomeBody();
 				mainWindowId = GUIUtility.GetControlID(FocusType.Passive);
 				mainWindowRect.width = 400;
 				mainWindowRect.x = (Screen.width - 400) / 2;
 				mainWindowRect.y = Screen.height / 4;
 				mainWindowScrollPosition.Set(0, 0);
 
-				GameEvents.OnKSCFacilityUpgraded.Add(OnKSCFacilityUpgraded);
-				GameEvents.OnTechnologyResearched.Add(OnTechnologyResearched);
 				GameEvents.onGUIApplicationLauncherReady.Add(OnAppLauncherReady);
-				GameEvents.onGUIRnDComplexSpawn.Add(onGUIRnDComplexSpawn);
+				GameEvents.OnKSCFacilityUpgraded.Add(OnKSCFacilityUpgraded);
+				GameEvents.onGUIRnDComplexSpawn.Add(SwitchOff);
+				GameEvents.onGUIAstronautComplexSpawn.Add(SwitchOff);
 			}
 		}
 
@@ -75,10 +76,10 @@ namespace KEI
 		{
 			if (isActive)
 			{
-				GameEvents.OnKSCFacilityUpgraded.Remove(OnKSCFacilityUpgraded);
-				GameEvents.OnTechnologyResearched.Remove(OnTechnologyResearched);
 				GameEvents.onGUIApplicationLauncherReady.Remove(OnAppLauncherReady);
-				GameEvents.onGUIRnDComplexSpawn.Remove(onGUIRnDComplexSpawn);
+				GameEvents.OnKSCFacilityUpgraded.Remove(OnKSCFacilityUpgraded);
+				GameEvents.onGUIRnDComplexSpawn.Remove(SwitchOff);
+				GameEvents.onGUIAstronautComplexSpawn.Remove(SwitchOff);
 				if (appLauncherButton != null)
 					ApplicationLauncher.Instance.RemoveModApplication (appLauncherButton);
 			}
@@ -89,15 +90,7 @@ namespace KEI
 			appLauncherButton.SetFalse();
 		}
 
-		private void OnTechnologyResearched(GameEvents.HostTargetAction<RDTech, RDTech.OperationResult> hta)
-		{
-			// Research was successfull
-			if (hta.target == RDTech.OperationResult.Successful)
-			{
-			}
-		}
-
-		private void onGUIRnDComplexSpawn()
+		private void SwitchOff()
 		{
 			appLauncherButton.SetFalse();
 		}
@@ -106,12 +99,11 @@ namespace KEI
 		{
 			if (!isActive) return;
 			if (mainWindowVisible) {
-				GUI.skin = UnityEngine.GUI.skin;
 				mainWindowRect = GUILayout.Window(
 					mainWindowId,
 					mainWindowRect,
 					RenderMainWindow,
-					"Kerbin Environmental Institute",
+					HomeBody.theName + " Environmental Institute",
 					GUILayout.ExpandWidth(true),
 					GUILayout.ExpandHeight(true)
 				);
@@ -119,9 +111,6 @@ namespace KEI
 		}
 
 		private void GetKscBiomes() {
-			// Find home body
-			HomeBody = FlightGlobals.GetHomeBody();
-
 			// Find KSC biomes - stolen from [x] Science source code :D
 			kscBiomes.Clear();
 			kscBiomes = UnityEngine.Object.FindObjectsOfType<Collider>()
@@ -137,19 +126,19 @@ namespace KEI
 				.ToList();
 		}
 
+		// List available experiments
 		private void GetExperiments() {
 			unlockedExperiments.Clear();
 			availableExperiments.Clear();
 
-			// List available experiments
-			List<AvailablePart> parts = PartLoader.Instance.parts;
+			List<AvailablePart> parts = PartLoader.Instance.loadedParts;
 
 			// EVA Reports available from the beginning
 			unlockedExperiments.Add(ResearchAndDevelopment.GetExperiment("evaReport"));
 
 			// To take surface samples from other worlds you need to upgrade Astronaut Complex and R&D
 			// But to take surface samples from home you need to only upgrade R&D
-			if (ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.ResearchAndDevelopment) >= 0.5)
+			if (ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.ResearchAndDevelopment) > 0.0)
 				unlockedExperiments.Add(ResearchAndDevelopment.GetExperiment("surfaceSample"));
 
 			foreach (var part in parts.Where(x => ResearchAndDevelopment.PartTechAvailable(x) && x.manufacturer != "Station Science Directorate"))
@@ -159,15 +148,14 @@ namespace KEI
 				{
 					// Check science modules
 					foreach (ModuleScienceExperiment ex in part.partPrefab.Modules.OfType<ModuleScienceExperiment>())
-						if (!ex.experimentID.Equals(""))
+						// Remove experiments with empty ids, by [Kerbas-ad-astra](https://github.com/Kerbas-ad-astra)
+						// Remove Surface Experiments Pack experiments not meant to run in atmosphere
+						if (ex.experimentID != "" && ex.experimentID != "SEP_SolarwindSpectrum" && ex.experimentID != "SEP_CCIDscan")
 						{
 							unlockedExperiments.AddUnique<ScienceExperiment>(ResearchAndDevelopment.GetExperiment(ex.experimentID));
 						}
 				}
 			}
-			// Remove Surface Experiments Pack experiments not meant to run in atmosphere
-			unlockedExperiments.Remove(ResearchAndDevelopment.GetExperiment("SEP_SolarwindSpectrum"));
-			unlockedExperiments.Remove(ResearchAndDevelopment.GetExperiment("SEP_CCIDscan"));
 		}
 
 		private void GainScience(List<ScienceExperiment> experiments, bool analyze)
@@ -222,13 +210,13 @@ namespace KEI
 		{
 			StringBuilder msg = new StringBuilder();
 			string[] template;
-			if (KSP.IO.File.Exists<KEI>(experiment.id + ".msg"))
+			if (File.Exists<KEI>(experiment.id + ".msg"))
 			{
-				template = KSP.IO.File.ReadAllLines<KEI>(experiment.id + ".msg");
+				template = File.ReadAllLines<KEI>(experiment.id + ".msg");
 			}
 			else
 			{
-				template = KSP.IO.File.ReadAllLines<KEI>("unknownExperiment.msg");
+				template = File.ReadAllLines<KEI>("unknownExperiment.msg");
 				msg.AppendLine("Top Secret info! Project " + experiment.experimentTitle);
 				msg.AppendLine("Eat after reading");
 				msg.AppendLine("And drink some coffee");
@@ -313,6 +301,10 @@ namespace KEI
 				appLauncherButton.SetFalse();
 			GUILayout.EndVertical();
 			GUI.DragWindow();
+		}
+
+		private void Log(string message) {
+			Debug.Log("KEI debug: " + message);
 		}
 	}
 }

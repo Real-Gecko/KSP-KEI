@@ -4,7 +4,14 @@
 Gather science from KSC in one click.
 
 # Changelog
+## 1.2
+- KSP 1.2 compatible
+- KEI window closes on opening Astronaut Complex
+- KEI window title changes according to main body name, so in RSS it will be EEI :D
+- Changed icon, made by [Freepik](http://www.freepik.com) and is licensed under [Creative Commons BY 3.0](http://creativecommons.org/licenses/by/3.0/)
+
 ## 1.1.2
+- Fixed a bug with empty experiment IDs by [Kerbas-ad-astra](https://github.com/Kerbas-ad-astra)
 - Typo fixes by [Kerbas-ad-astra](https://github.com/Kerbas-ad-astra)
 - Home planet taken from FlightGlobals, tested with [RSS](http://forum.kerbalspaceprogram.com/index.php?/topic/50471-113-real-solar-system-v1140-july-3/) and [Dres is a Harsh Mistress ](http://forum.kerbalspaceprogram.com/index.php?/topic/141142-dres-is-a-harsh-mistress/)
 
