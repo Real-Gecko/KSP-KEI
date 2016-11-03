@@ -4,6 +4,10 @@
 Gather science from KSC in one click.
 
 # Changelog
+## 1.2.1
+- Recompiled with KSP 1.2.1 libraries, just in case
+- New messages for some DMagicOrbitalScience experiments from [Enceos](http://forum.kerbalspaceprogram.com/index.php?/profile/110725-enceos/)
+
 ## 1.2
 - KSP 1.2 compatible
 - KEI window closes on opening Astronaut Complex

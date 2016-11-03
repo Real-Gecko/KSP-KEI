@@ -20,7 +20,6 @@
     <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>full</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
@@ -28,10 +27,9 @@
     <ConsolePause>false</ConsolePause>
     <CustomCommands>
       <CustomCommands>
-        <Command>
-          <type>AfterBuild</type>
-          <command>${ProjectDir}\copy.bat</command>
-        </Command>
+        <Command type="AfterBuild" command="cp ${TargetFile} /home/realgecko/Development/KSP/GameData/${ProjectName}" workingdir="" />
+        <Command type="Execute" command="/usr/bin/wine /home/realgecko/Development/KSP/KSP_x64.exe" workingdir="/home/realgecko/Development/KSP/" />
+        <Command type="AfterBuild" command="cp ${TargetFile} ${SolutionDir}/GameData/${ProjectName}" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -52,7 +50,4 @@
     <Compile Include="KEI.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <None Include="copy.bat" />
-  </ItemGroup>
 </Project>
