@@ -149,7 +149,7 @@ namespace KEI
 					foreach (ModuleScienceExperiment ex in part.partPrefab.Modules.OfType<ModuleScienceExperiment>())
 						// Remove experiments with empty ids, by [Kerbas-ad-astra](https://github.com/Kerbas-ad-astra)
 						// Remove Surface Experiments Pack experiments not meant to run in atmosphere
-						if (ex.experimentID != "" && ex.experimentID != "SEP_SolarwindSpectrum" && ex.experimentID != "SEP_CCIDscan")
+						if (ex.experimentID != null && ex.experimentID != "" && ex.experimentID != "SEP_SolarwindSpectrum" && ex.experimentID != "SEP_CCIDscan")
 						{
 							unlockedExperiments.AddUnique<ScienceExperiment>(ResearchAndDevelopment.GetExperiment(ex.experimentID));
 						}
