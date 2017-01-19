@@ -12,8 +12,8 @@ Gather science from KSC in one click.
 - Code added to read config file and check the loaded data for excluded
   experiments
 - Old code removed which had hard-coded experiments for exclusion:
-    SEP_SolarwindSpectrum
-    SEP_CCIDscan
+-    SEP_SolarwindSpectrum
+-    SEP_CCIDscan
 
 ======== Following is from the standard release by the author ===========
 
