@@ -36,7 +36,7 @@ namespace KEI
 		public void Awake()
 		{
 			if (Instance != null) {
-				Destroy (this);
+				Destroy(this);
 				return;
 			}
 			Instance = this;
@@ -50,6 +50,32 @@ namespace KEI
 				mainWindowRect = new Rect();
 				mainWindowScrollPosition = new Vector2();
 				mainWindowVisible = false;
+			}
+		}
+
+		private static string[] excludedExperiments;
+
+		public void ModuleManagerPostLoad()
+		{
+			if (excludedExperiments != null)
+				return;
+			Debug.Log("ModuleManagerPostLoad");
+			List<string> expList = new List<string>();
+			ConfigNode[] excludedNode = GameDatabase.Instance.GetConfigNodes("KEI_EXCLUDED_EXPERIMENTS");
+			if (excludedNode != null)
+			{
+				int len1 = excludedNode.Length;
+				for (int i = 0; i < len1; i++)
+				{
+					string[] types = excludedNode[i].GetValues("experiment");
+					expList.AddRange(types);
+				}
+				excludedExperiments = expList.ToArray();
+			}
+			else
+			{
+				Debug.Log("Missing config file");
+				excludedExperiments = expList.ToArray();
 			}
 		}
 
@@ -68,6 +94,8 @@ namespace KEI
 				GameEvents.OnKSCFacilityUpgraded.Add(OnKSCFacilityUpgraded);
 				GameEvents.onGUIRnDComplexSpawn.Add(SwitchOff);
 				GameEvents.onGUIAstronautComplexSpawn.Add(SwitchOff);
+
+				ModuleManagerPostLoad();
 			}
 		}
 
@@ -80,7 +108,7 @@ namespace KEI
 				GameEvents.onGUIRnDComplexSpawn.Remove(SwitchOff);
 				GameEvents.onGUIAstronautComplexSpawn.Remove(SwitchOff);
 				if (appLauncherButton != null)
-					ApplicationLauncher.Instance.RemoveModApplication (appLauncherButton);
+					ApplicationLauncher.Instance.RemoveModApplication(appLauncherButton);
 			}
 		}
 
@@ -98,6 +126,7 @@ namespace KEI
 		{
 			if (!isActive) return;
 			if (mainWindowVisible) {
+
 				mainWindowRect = GUILayout.Window(
 					mainWindowId,
 					mainWindowRect,
@@ -110,6 +139,7 @@ namespace KEI
 		}
 
 		private void GetKscBiomes() {
+
 			// Find KSC biomes - stolen from [x] Science source code :D
 			kscBiomes.Clear();
 			kscBiomes = UnityEngine.Object.FindObjectsOfType<Collider>()
@@ -127,6 +157,7 @@ namespace KEI
 
 		// List available experiments
 		private void GetExperiments() {
+
 			unlockedExperiments.Clear();
 			availableExperiments.Clear();
 
@@ -147,12 +178,18 @@ namespace KEI
 				{
 					// Check science modules
 					foreach (ModuleScienceExperiment ex in part.partPrefab.Modules.OfType<ModuleScienceExperiment>())
+					{
 						// Remove experiments with empty ids, by [Kerbas-ad-astra](https://github.com/Kerbas-ad-astra)
 						// Remove Surface Experiments Pack experiments not meant to run in atmosphere
-						if (ex.experimentID != "" && ex.experimentID != "SEP_SolarwindSpectrum" && ex.experimentID != "SEP_CCIDscan")
+						if (ex.experimentID == null)
+						{
+							Debug.Log("name: " + part.name + "   experimentID is null");
+						}
+						if (ex.experimentID != null && ex.experimentID != "" && !excludedExperiments.Contains(ex.experimentID))
 						{
 							unlockedExperiments.AddUnique<ScienceExperiment>(ResearchAndDevelopment.GetExperiment(ex.experimentID));
 						}
+					}
 				}
 			}
 		}
@@ -269,7 +306,7 @@ namespace KEI
 			GUILayout.BeginVertical();
 			if (availableExperiments.Count > 0)
 			{
-				mainWindowScrollPosition = GUILayout.BeginScrollView(mainWindowScrollPosition, GUILayout.Height(Screen.height/2));
+				mainWindowScrollPosition = GUILayout.BeginScrollView(mainWindowScrollPosition, GUILayout.Height(Screen.height / 2));
 				//				foreach (var available in availableExperiments)
 				for (var i = 0; i < availableExperiments.Count; i++)
 				{
@@ -294,6 +331,7 @@ namespace KEI
 				if (!GUI.enabled) GUI.enabled = true;
 			}
 			else {
+
 				GUILayout.Label("Nothing to do here, go research something.");
 			}
 			if (GUILayout.Button("Close", GUILayout.Height(25)))
@@ -303,6 +341,7 @@ namespace KEI
 		}
 
 		private void Log(string message) {
+
 			Debug.Log("KEI debug: " + message);
 		}
 	}

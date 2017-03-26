@@ -4,6 +4,19 @@
 Gather science from KSC in one click.
 
 # Changelog
+
+## 1.2.1.1 Linuxgurugamer Unofficial Changes
+- Recompiled with KSP 1.2.2
+- Check for null added, in case an experiment is missing the experimentID
+- Config file added to list all excluded experiments
+- Code added to read config file and check the loaded data for excluded
+  experiments
+- Old code removed which had hard-coded experiments for exclusion:
+-    SEP_SolarwindSpectrum
+-    SEP_CCIDscan
+
+======== Following is from the standard release by the author ===========
+
 ## 1.2.1
 - Recompiled with KSP 1.2.1 libraries, just in case
 - New messages for some DMagicOrbitalScience experiments from [Enceos](http://forum.kerbalspaceprogram.com/index.php?/profile/110725-enceos/)
