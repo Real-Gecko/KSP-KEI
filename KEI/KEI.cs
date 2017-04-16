@@ -77,6 +77,10 @@ namespace KEI
 				Debug.Log("Missing config file");
 				excludedExperiments = expList.ToArray();
 			}
+            foreach (var s in excludedExperiments)
+            {
+                Debug.Log("Excluded experiment: " + s);
+            }
 		}
 
 		public void Start()
@@ -179,6 +183,8 @@ namespace KEI
 					// Check science modules
 					foreach (ModuleScienceExperiment ex in part.partPrefab.Modules.OfType<ModuleScienceExperiment>())
 					{
+                        if (ex.experimentID != null)
+                            Debug.Log("Part: " + part.partConfig.name + "   experiment: " + ex.experimentID);
 						// Remove experiments with empty ids, by [Kerbas-ad-astra](https://github.com/Kerbas-ad-astra)
 						// Remove Surface Experiments Pack experiments not meant to run in atmosphere
 						if (ex.experimentID == null)
@@ -189,6 +195,11 @@ namespace KEI
 						{
 							unlockedExperiments.AddUnique<ScienceExperiment>(ResearchAndDevelopment.GetExperiment(ex.experimentID));
 						}
+                        else
+                        {
+                            if (ex.experimentID != null)
+                                Debug.Log("Excluded experiment: " + ex.experimentID);
+                        }
 					}
 				}
 			}
