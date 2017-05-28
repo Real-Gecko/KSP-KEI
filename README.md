@@ -4,6 +4,13 @@
 Gather science from KSC in one click.
 
 # Changelog
+## 1.2.2
+- Experiments for the part are not available until part is purchased
+- Fixed `dmlaserblastscan` and `dmNAlbedoScan` descriptions
+- Check for null experiment ids by [linuxgurugamer](https://github.com/linuxgurugamer)
+- List of excluded experiments is stored in plain text file by [linuxgurugamer](https://github.com/linuxgurugamer)
+- List of exlcuded manufacturers is stored in plain text file
+
 ## 1.2.1
 - Recompiled with KSP 1.2.1 libraries, just in case
 - New messages for some DMagicOrbitalScience experiments from [Enceos](http://forum.kerbalspaceprogram.com/index.php?/profile/110725-enceos/)

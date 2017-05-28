@@ -24,6 +24,8 @@ namespace KEI
 		private List<ScienceExperiment> unlockedExperiments;
 		private List<string> kscBiomes;
 		private CelestialBody HomeBody;
+		private string[] excludedExperiments;
+		private string[] excludedManufacturers;
 
 		//GUI related members
 		private ApplicationLauncherButton appLauncherButton;
@@ -63,6 +65,8 @@ namespace KEI
 				mainWindowRect.x = (Screen.width - 400) / 2;
 				mainWindowRect.y = Screen.height / 4;
 				mainWindowScrollPosition.Set(0, 0);
+
+				LoadExceptions ();
 
 				GameEvents.onGUIApplicationLauncherReady.Add(OnAppLauncherReady);
 				GameEvents.OnKSCFacilityUpgraded.Add(OnKSCFacilityUpgraded);
@@ -140,19 +144,34 @@ namespace KEI
 			if (ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.ResearchAndDevelopment) > 0.0)
 				unlockedExperiments.Add(ResearchAndDevelopment.GetExperiment("surfaceSample"));
 
-			foreach (var part in parts.Where(x => ResearchAndDevelopment.PartTechAvailable(x) && x.manufacturer != "Station Science Directorate"))
+			foreach
+			(
+				AvailablePart part in parts.Where
+				(
+					x => ResearchAndDevelopment.PartTechAvailable(x) &&
+					!excludedManufacturers.Contains(x.manufacturer) &&
+					ResearchAndDevelopment.PartModelPurchased(x)
+				)
+			)
 			{
 				// Part has some modules
 				if (part.partPrefab.Modules != null)
 				{
 					// Check science modules
 					foreach (ModuleScienceExperiment ex in part.partPrefab.Modules.OfType<ModuleScienceExperiment>())
+					{
+						if (ex.experimentID == null)
+						{
+							Log("part's " + part.name + " experimentID is null");
+							continue;
+						}
 						// Remove experiments with empty ids, by [Kerbas-ad-astra](https://github.com/Kerbas-ad-astra)
 						// Remove Surface Experiments Pack experiments not meant to run in atmosphere
-						if (ex.experimentID != "" && ex.experimentID != "SEP_SolarwindSpectrum" && ex.experimentID != "SEP_CCIDscan")
+						if (ex.experimentID != "" && !excludedExperiments.Contains(ex.experimentID))
 						{
-							unlockedExperiments.AddUnique<ScienceExperiment>(ResearchAndDevelopment.GetExperiment(ex.experimentID));
+							unlockedExperiments.AddUnique<ScienceExperiment> (ResearchAndDevelopment.GetExperiment (ex.experimentID));
 						}
+					}
 				}
 			}
 		}
@@ -300,6 +319,11 @@ namespace KEI
 				appLauncherButton.SetFalse();
 			GUILayout.EndVertical();
 			GUI.DragWindow();
+		}
+
+		private void LoadExceptions() {
+			excludedExperiments = File.ReadAllLines<KEI>("ExcludedExperiments.lst");
+			excludedManufacturers = File.ReadAllLines<KEI>("ExcludedManufacturers.lst");
 		}
 
 		private void Log(string message) {
