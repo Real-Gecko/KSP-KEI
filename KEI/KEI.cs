@@ -106,7 +106,7 @@ namespace KEI
 					mainWindowId,
 					mainWindowRect,
 					RenderMainWindow,
-					HomeBody.theName + " Environmental Institute",
+					HomeBody.displayName + " Environmental Institute",
 					GUILayout.ExpandWidth(true),
 					GUILayout.ExpandHeight(true)
 				);
@@ -188,6 +188,7 @@ namespace KEI
 						experiment,
 						ExperimentSituations.SrfLanded,
 						HomeBody,
+						biome,
 						biome
 					);
 					if (subject.science < subject.scienceCap)
