@@ -106,7 +106,7 @@ namespace KEI
 					mainWindowId,
 					mainWindowRect,
 					RenderMainWindow,
-					HomeBody.theName + " Environmental Institute",
+					HomeBody.name + " Environmental Institute",
 					GUILayout.ExpandWidth(true),
 					GUILayout.ExpandHeight(true)
 				);
@@ -188,7 +188,8 @@ namespace KEI
 						experiment,
 						ExperimentSituations.SrfLanded,
 						HomeBody,
-						biome
+						biome,
+						null
 					);
 					if (subject.science < subject.scienceCap)
 					{
@@ -235,8 +236,9 @@ namespace KEI
 			else
 			{
 				template = File.ReadAllLines<KEI>("unknownExperiment.msg");
-				msg.AppendLine("Top Secret info! Project " + experiment.experimentTitle);
-				msg.AppendLine("Eat after reading");
+				msg.AppendLine("TOP SECRET!");
+				msg.AppendLine("Project " + experiment.experimentTitle);
+				msg.AppendLine("Eat this report after reading");
 				msg.AppendLine("And drink some coffee");
 				msg.AppendLine("****");
 			}

@@ -4,6 +4,10 @@
 Gather science from KSC in one click.
 
 # Changelog
+## 1.2.3
+- Recompile for KSP 1.3.1
+- Fix body name in main window title
+
 ## 1.2.2
 - Experiments for the part are not available until part is purchased
 - Fixed `dmlaserblastscan` and `dmNAlbedoScan` descriptions
