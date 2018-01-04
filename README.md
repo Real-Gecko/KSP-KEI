@@ -16,6 +16,16 @@ Gather science from KSC in one click.
 -    SEP_CCIDscan
 
 ======== Following is from the standard release by the author ===========
+## 1.2.3
+- Recompile for KSP 1.3.1
+- Fix body name in main window title
+
+## 1.2.2
+- Experiments for the part are not available until part is purchased
+- Fixed `dmlaserblastscan` and `dmNAlbedoScan` descriptions
+- Check for null experiment ids by [linuxgurugamer](https://github.com/linuxgurugamer)
+- List of excluded experiments is stored in plain text file by [linuxgurugamer](https://github.com/linuxgurugamer)
+- List of exlcuded manufacturers is stored in plain text file
 
 ## 1.2.1
 - Recompiled with KSP 1.2.1 libraries, just in case

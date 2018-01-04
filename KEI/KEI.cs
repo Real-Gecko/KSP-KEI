@@ -24,6 +24,8 @@ namespace KEI
 		private List<ScienceExperiment> unlockedExperiments;
 		private List<string> kscBiomes;
 		private CelestialBody HomeBody;
+		private string[] excludedExperiments;
+		private string[] excludedManufacturers;
 
 		//GUI related members
 		private ApplicationLauncherButton appLauncherButton;
@@ -94,6 +96,8 @@ namespace KEI
 				mainWindowRect.y = Screen.height / 4;
 				mainWindowScrollPosition.Set(0, 0);
 
+				LoadExceptions ();
+
 				GameEvents.onGUIApplicationLauncherReady.Add(OnAppLauncherReady);
 				GameEvents.OnKSCFacilityUpgraded.Add(OnKSCFacilityUpgraded);
 				GameEvents.onGUIRnDComplexSpawn.Add(SwitchOff);
@@ -135,7 +139,7 @@ namespace KEI
 					mainWindowId,
 					mainWindowRect,
 					RenderMainWindow,
-					HomeBody.theName + " Environmental Institute",
+					HomeBody.name + " Environmental Institute",
 					GUILayout.ExpandWidth(true),
 					GUILayout.ExpandHeight(true)
 				);
@@ -175,7 +179,15 @@ namespace KEI
 			if (ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.ResearchAndDevelopment) > 0.0)
 				unlockedExperiments.Add(ResearchAndDevelopment.GetExperiment("surfaceSample"));
 
-			foreach (var part in parts.Where(x => ResearchAndDevelopment.PartTechAvailable(x) && x.manufacturer != "Station Science Directorate"))
+			foreach
+			(
+				AvailablePart part in parts.Where
+				(
+					x => ResearchAndDevelopment.PartTechAvailable(x) &&
+					!excludedManufacturers.Contains(x.manufacturer) &&
+					ResearchAndDevelopment.PartModelPurchased(x)
+				)
+			)
 			{
 				// Part has some modules
 				if (part.partPrefab.Modules != null)
@@ -183,23 +195,17 @@ namespace KEI
 					// Check science modules
 					foreach (ModuleScienceExperiment ex in part.partPrefab.Modules.OfType<ModuleScienceExperiment>())
 					{
-                        if (ex.experimentID != null)
-                            Debug.Log("Part: " + part.partConfig.name + "   experiment: " + ex.experimentID);
-						// Remove experiments with empty ids, by [Kerbas-ad-astra](https://github.com/Kerbas-ad-astra)
-						// Remove Surface Experiments Pack experiments not meant to run in atmosphere
 						if (ex.experimentID == null)
 						{
-							Debug.Log("name: " + part.name + "   experimentID is null");
+							Log("part's " + part.name + " experimentID is null");
+							continue;
 						}
-						if (ex.experimentID != null && ex.experimentID != "" && !excludedExperiments.Contains(ex.experimentID))
+						// Remove experiments with empty ids, by [Kerbas-ad-astra](https://github.com/Kerbas-ad-astra)
+						// Remove Surface Experiments Pack experiments not meant to run in atmosphere
+						if (ex.experimentID != "" && !excludedExperiments.Contains(ex.experimentID))
 						{
-							unlockedExperiments.AddUnique<ScienceExperiment>(ResearchAndDevelopment.GetExperiment(ex.experimentID));
+							unlockedExperiments.AddUnique<ScienceExperiment> (ResearchAndDevelopment.GetExperiment (ex.experimentID));
 						}
-                        else
-                        {
-                            if (ex.experimentID != null)
-                                Debug.Log("Excluded experiment: " + ex.experimentID);
-                        }
 					}
 				}
 			}
@@ -217,7 +223,8 @@ namespace KEI
 						experiment,
 						ExperimentSituations.SrfLanded,
 						HomeBody,
-						biome
+						biome,
+						null
 					);
 					if (subject.science < subject.scienceCap)
 					{
@@ -264,8 +271,9 @@ namespace KEI
 			else
 			{
 				template = File.ReadAllLines<KEI>("unknownExperiment.msg");
-				msg.AppendLine("Top Secret info! Project " + experiment.experimentTitle);
-				msg.AppendLine("Eat after reading");
+				msg.AppendLine("TOP SECRET!");
+				msg.AppendLine("Project " + experiment.experimentTitle);
+				msg.AppendLine("Eat this report after reading");
 				msg.AppendLine("And drink some coffee");
 				msg.AppendLine("****");
 			}
@@ -349,6 +357,11 @@ namespace KEI
 				appLauncherButton.SetFalse();
 			GUILayout.EndVertical();
 			GUI.DragWindow();
+		}
+
+		private void LoadExceptions() {
+			excludedExperiments = File.ReadAllLines<KEI>("ExcludedExperiments.lst");
+			excludedManufacturers = File.ReadAllLines<KEI>("ExcludedManufacturers.lst");
 		}
 
 		private void Log(string message) {
