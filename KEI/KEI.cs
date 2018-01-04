@@ -38,7 +38,7 @@ namespace KEI
 		public void Awake()
 		{
 			if (Instance != null) {
-				Destroy (this);
+				Destroy(this);
 				return;
 			}
 			Instance = this;
@@ -53,6 +53,36 @@ namespace KEI
 				mainWindowScrollPosition = new Vector2();
 				mainWindowVisible = false;
 			}
+		}
+
+		private static string[] excludedExperiments;
+
+		public void ModuleManagerPostLoad()
+		{
+			if (excludedExperiments != null)
+				return;
+			Debug.Log("ModuleManagerPostLoad");
+			List<string> expList = new List<string>();
+			ConfigNode[] excludedNode = GameDatabase.Instance.GetConfigNodes("KEI_EXCLUDED_EXPERIMENTS");
+			if (excludedNode != null)
+			{
+				int len1 = excludedNode.Length;
+				for (int i = 0; i < len1; i++)
+				{
+					string[] types = excludedNode[i].GetValues("experiment");
+					expList.AddRange(types);
+				}
+				excludedExperiments = expList.ToArray();
+			}
+			else
+			{
+				Debug.Log("Missing config file");
+				excludedExperiments = expList.ToArray();
+			}
+            foreach (var s in excludedExperiments)
+            {
+                Debug.Log("Excluded experiment: " + s);
+            }
 		}
 
 		public void Start()
@@ -72,6 +102,8 @@ namespace KEI
 				GameEvents.OnKSCFacilityUpgraded.Add(OnKSCFacilityUpgraded);
 				GameEvents.onGUIRnDComplexSpawn.Add(SwitchOff);
 				GameEvents.onGUIAstronautComplexSpawn.Add(SwitchOff);
+
+				ModuleManagerPostLoad();
 			}
 		}
 
@@ -84,7 +116,7 @@ namespace KEI
 				GameEvents.onGUIRnDComplexSpawn.Remove(SwitchOff);
 				GameEvents.onGUIAstronautComplexSpawn.Remove(SwitchOff);
 				if (appLauncherButton != null)
-					ApplicationLauncher.Instance.RemoveModApplication (appLauncherButton);
+					ApplicationLauncher.Instance.RemoveModApplication(appLauncherButton);
 			}
 		}
 
@@ -102,6 +134,7 @@ namespace KEI
 		{
 			if (!isActive) return;
 			if (mainWindowVisible) {
+
 				mainWindowRect = GUILayout.Window(
 					mainWindowId,
 					mainWindowRect,
@@ -114,6 +147,7 @@ namespace KEI
 		}
 
 		private void GetKscBiomes() {
+
 			// Find KSC biomes - stolen from [x] Science source code :D
 			kscBiomes.Clear();
 			kscBiomes = UnityEngine.Object.FindObjectsOfType<Collider>()
@@ -131,6 +165,7 @@ namespace KEI
 
 		// List available experiments
 		private void GetExperiments() {
+
 			unlockedExperiments.Clear();
 			availableExperiments.Clear();
 
@@ -290,7 +325,7 @@ namespace KEI
 			GUILayout.BeginVertical();
 			if (availableExperiments.Count > 0)
 			{
-				mainWindowScrollPosition = GUILayout.BeginScrollView(mainWindowScrollPosition, GUILayout.Height(Screen.height/2));
+				mainWindowScrollPosition = GUILayout.BeginScrollView(mainWindowScrollPosition, GUILayout.Height(Screen.height / 2));
 				//				foreach (var available in availableExperiments)
 				for (var i = 0; i < availableExperiments.Count; i++)
 				{
@@ -315,6 +350,7 @@ namespace KEI
 				if (!GUI.enabled) GUI.enabled = true;
 			}
 			else {
+
 				GUILayout.Label("Nothing to do here, go research something.");
 			}
 			if (GUILayout.Button("Close", GUILayout.Height(25)))
@@ -329,6 +365,7 @@ namespace KEI
 		}
 
 		private void Log(string message) {
+
 			Debug.Log("KEI debug: " + message);
 		}
 	}
